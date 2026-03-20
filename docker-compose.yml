@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # -------------------------
+  # BACKEND MICROSERVICES
+  # -------------------------
+  user-service:
+    build:
+      context: ./services/user-service
+    ports:
+      - "8002:8002"
+    networks:
+      - saas-network
+    restart: always
+
+  ai-service:
+    build:
+      context: ./services/ai-service
+    ports:
+      - "8001:8001"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    networks:
+      - saas-network
+    restart: always
+
+  analytics-service:
+    build:
+      context: ./services/analytics-service
+    ports:
+      - "8003:8003"
+    networks:
+      - saas-network
+    restart: always
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+    ports:
+      - "8000:8000"
+    depends_on:
+      - user-service
+      - ai-service
+      - analytics-service
+    networks:
+      - saas-network
+    restart: always
+
+  # -------------------------
+  # FRONTEND TIER
+  # -------------------------
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api-gateway
+    networks:
+      - saas-network
+    restart: always
+
+networks:
+  saas-network:
+    driver: bridge
